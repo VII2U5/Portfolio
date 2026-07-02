@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V — 3D Character & Creature Artist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0a0a0a;
+    --ink-2: #111110;
+    --ink-3: #1c1b19;
+    --ink-4: #2a2925;
+    --gold: #c8a96e;
+    --gold-dim: #7a6540;
+    --ash: #e8e0d5;
+    --ash-dim: #9e9589;
+    --ash-faint: #3d3b36;
+    --divider: #2d2b25;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--ash);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── HEX GRID BACKGROUND ── */
+  .hex-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.045;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.4s, background 0.4s;
+  }
+  nav.scrolled {
+    background: rgba(10,10,10,0.92);
+    border-color: var(--divider);
+    backdrop-filter: blur(8px);
+  }
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--ash-dim);
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding-top: 6rem;
+    padding-bottom: 4rem;
+  }
+  .hero-inner {
+    max-width: 700px;
+  }
+  .hero-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+  .hero-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--ash);
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.35s forwards;
+  }
+  .hero-name em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ash-dim);
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.5s forwards;
+  }
+  .hero-bio {
+    max-width: 520px;
+    font-size: 0.9rem;
+    color: var(--ash-dim);
+    line-height: 1.85;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.65s forwards;
+  }
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+  .btn {
+    display: inline-block;
+    padding: 0.65rem 1.6rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.25s;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+  }
+  .btn-primary:hover {
+    background: var(--gold);
+    color: var(--ink);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ash-dim);
+    border: 1px solid var(--ash-faint);
+  }
+  .btn-ghost:hover {
+    border-color: var(--ash-dim);
+    color: var(--ash);
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--ash-faint);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    animation: fadeUp 1s 1.4s both;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold-dim), transparent);
+    animation: scrollPulse 2s 1.5s infinite;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 7rem 0;
+    border-top: 1px solid var(--divider);
+  }
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--divider);
+    max-width: 120px;
+  }
+  .section-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--ash);
+    margin-bottom: 1.5rem;
+  }
+  .section-heading em { font-style: italic; color: var(--gold); }
+
+  /* ── ABOUT ── */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+  .about-text p {
+    color: var(--ash-dim);
+    font-size: 0.9rem;
+    line-height: 1.9;
+    margin-bottom: 1.2rem;
+  }
+  .about-text p:last-child { margin-bottom: 0; }
+  .about-details {
+    padding-top: 0.5rem;
+  }
+  .detail-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--divider);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .detail-item:first-child { border-top: 1px solid var(--divider); }
+  .detail-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ash-faint);
+  }
+  .detail-value {
+    font-size: 0.85rem;
+    color: var(--ash-dim);
+    text-align: right;
+  }
+
+  /* ── SKILLS ── */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--divider);
+    border: 1px solid var(--divider);
+  }
+  .skill-card {
+    background: var(--ink-2);
+    padding: 1.75rem;
+    transition: background 0.25s;
+  }
+  .skill-card:hover { background: var(--ink-3); }
+  .skill-card-icon {
+    font-size: 1.2rem;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+  }
+  .skill-card-title {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 0.75rem;
+  }
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .skill-tag {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ash-faint);
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--ash-faint);
+  }
+
+  /* ── PORTFOLIO ── */
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--divider);
+    border: 1px solid var(--divider);
+  }
+  .project-card {
+    background: var(--ink-2);
+    overflow: hidden;
+    cursor: pointer;
+    transition: background 0.25s;
+    position: relative;
+  }
+  .project-card:hover { background: var(--ink-3); }
+  .project-img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--ink-3);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .project-placeholder {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ash-faint);
+    transition: color 0.3s;
+  }
+  .project-card:hover .project-placeholder { color: var(--gold-dim); }
+  .project-info {
+    padding: 1.5rem;
+    border-top: 1px solid var(--divider);
+  }
+  .project-tag {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+  .project-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: var(--ash);
+    margin-bottom: 0.5rem;
+  }
+  .project-desc {
+    font-size: 0.8rem;
+    color: var(--ash-faint);
+    line-height: 1.7;
+  }
+  .project-add-hint {
+    font-size: 0.7rem;
+    color: var(--ash-faint);
+    padding: 2rem;
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* ── CONTACT ── */
+  .contact-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+  .contact-text p {
+    color: var(--ash-dim);
+    font-size: 0.9rem;
+    line-height: 1.9;
+    margin-bottom: 1.2rem;
+  }
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .contact-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--divider);
+    text-decoration: none;
+    transition: all 0.2s;
+    color: inherit;
+  }
+  .contact-link:first-child { border-top: 1px solid var(--divider); }
+  .contact-link:hover .cl-name { color: var(--gold); }
+  .contact-link:hover .cl-arrow { transform: translateX(4px); color: var(--gold); }
+  .cl-platform {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ash-faint);
+    min-width: 80px;
+  }
+  .cl-name {
+    font-size: 0.85rem;
+    color: var(--ash-dim);
+    transition: color 0.2s;
+    flex: 1;
+    padding: 0 1rem;
+  }
+  .cl-arrow {
+    font-size: 1rem;
+    color: var(--ash-faint);
+    transition: all 0.2s;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 2.5rem 0;
+    border-top: 1px solid var(--divider);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .footer-left {
+    font-size: 0.7rem;
+    color: var(--ash-faint);
+    letter-spacing: 0.08em;
+  }
+  .footer-right {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--ash-faint);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; }
+    50%       { opacity: 1; }
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 680px) {
+    .about-grid,
+    .contact-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+    .nav-links { display: none; }
+    .scroll-hint { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hex grid background -->
+<svg class="hex-canvas" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="hex" x="0" y="0" width="56" height="48.5" patternUnits="userSpaceOnUse">
+      <polygon points="28,2 54,16 54,44 28,58 2,44 2,16" fill="none" stroke="#c8a96e" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#hex)"/>
+</svg>
+
+<!-- Navigation -->
+<nav id="nav">
+  <a href="#hero" class="nav-logo">V.</a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#portfolio">Work</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section id="hero" style="border-top: none; padding-bottom: 2rem; position: relative;">
+  <div class="container">
+    <div class="hero-inner">
+      <p class="hero-eyebrow">3D Character &amp; Creature Artist</p>
+      <h1 class="hero-name">Your<br><em>Name.</em></h1>
+      <p class="hero-title">Sculpting forms that live between organic and machine</p>
+      <p class="hero-bio">
+        Second-year animation student building characters and creatures that carry weight — anatomical precision, dark atmosphere, and a pipeline from concept to engine. Specialising in the boundary where biology ends and something else begins.
+      </p>
+      <div class="hero-cta">
+        <a href="#portfolio" class="btn btn-primary">View Work</a>
+        <a href="#contact" class="btn btn-ghost">Get in Touch</a>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- About -->
+<section id="about">
+  <div class="container reveal">
+    <div class="section-label">About</div>
+    <div class="about-grid">
+      <div class="about-text">
+        <h2 class="section-heading">Craft rooted in<br><em>dark anatomy</em></h2>
+        <p>
+          I build 3D characters and creatures — from initial blockout through rigging and engine integration. My work sits at the intersection of biological plausibility and something deliberately wrong, influenced by the visual logic of Giger, Beksiński, and the mechanical mysticism in FromSoftware's art direction.
+        </p>
+        <p>
+          Currently completing my diploma project: a full production pipeline for an original 3D character, covering modelling, rigging, and integration into Unreal Engine 5. Alongside this I maintain personal creature lore systems and mod development for ARK Survival Ascended.
+        </p>
+        <p>
+          Available for commissions and collaborative projects. Interested in game studios, animated series production, and creature design pipelines.
+        </p>
+      </div>
+      <div class="about-details">
+        <div class="detail-item">
+          <span class="detail-label">Location</span>
+          <span class="detail-value">Chișinău, Moldova</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Education</span>
+          <span class="detail-value">Animation, Year 2</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Specialisation</span>
+          <span class="detail-value">Characters &amp; Creatures</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Engine</span>
+          <span class="detail-value">Unreal Engine 5</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Influences</span>
+          <span class="detail-value">Giger · Beksiński · Miyazaki</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Status</span>
+          <span class="detail-value" style="color: var(--gold);">Open to work</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Skills -->
+<section id="skills">
+  <div class="container reveal">
+    <div class="section-label">Skills</div>
+    <h2 class="section-heading" style="margin-bottom: 2.5rem;">The <em>pipeline</em></h2>
+    <div class="skills-grid">
+      <div class="skill-card">
+        <div class="skill-card-icon">I.</div>
+        <div class="skill-card-title">Modelling &amp; Sculpting</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Blender</span>
+          <span class="skill-tag">Hard Surface</span>
+          <span class="skill-tag">Organic</span>
+          <span class="skill-tag">Retopology</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-icon">II.</div>
+        <div class="skill-card-title">Texturing</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Substance Painter</span>
+          <span class="skill-tag">PBR</span>
+          <span class="skill-tag">UV Unwrap</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-icon">III.</div>
+        <div class="skill-card-title">Rigging &amp; Animation</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Armature</span>
+          <span class="skill-tag">Weight Painting</span>
+          <span class="skill-tag">FK/IK</span>
+          <span class="skill-tag">Constraints</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-icon">IV.</div>
+        <div class="skill-card-title">Engine Integration</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Unreal Engine 5</span>
+          <span class="skill-tag">Blueprints</span>
+          <span class="skill-tag">LODs</span>
+          <span class="skill-tag">Nanite</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-icon">V.</div>
+        <div class="skill-card-title">Narrative &amp; Lore</div>
+        <div class="skill-tags">
+          <span class="skill-tag">World-building</span>
+          <span class="skill-tag">Creature Design</span>
+          <span class="skill-tag">Game Design</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-icon">VI.</div>
+        <div class="skill-card-title">Tools</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Blender</span>
+          <span class="skill-tag">UE5</span>
+          <span class="skill-tag">ZBrush</span>
+          <span class="skill-tag">Photoshop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Portfolio -->
+<section id="portfolio">
+  <div class="container reveal">
+    <div class="section-label">Work</div>
+    <h2 class="section-heading" style="margin-bottom: 0.75rem;">Selected <em>projects</em></h2>
+    <p style="font-size: 0.85rem; color: var(--ash-faint); margin-bottom: 2.5rem; font-style: italic;">Replace placeholders with renders of your actual work</p>
+    <div class="portfolio-grid">
+      <div class="project-card">
+        <div class="project-img">
+          <span class="project-placeholder">01</span>
+        </div>
+        <div class="project-info">
+          <p class="project-tag">Diploma Project · 2025</p>
+          <h3 class="project-title">Character — [Title]</h3>
+          <p class="project-desc">Full pipeline: modelling → rigging → UE5 integration. Organic/biomechanical design.</p>
+        </div>
+      </div>
+      <div class="project-card">
+        <div class="project-img">
+          <span class="project-placeholder">02</span>
+        </div>
+        <div class="project-info">
+          <p class="project-tag">Creature Mod · ARK SA</p>
+          <h3 class="project-title">Voxornis</h3>
+          <p class="project-desc">Custom creature mod for ARK Survival Ascended. Blueprint-driven ability system, original lore.</p>
+        </div>
+      </div>
+      <div class="project-card">
+        <div class="project-img">
+          <span class="project-placeholder">03</span>
+        </div>
+        <div class="project-info">
+          <p class="project-tag">Personal Project</p>
+          <h3 class="project-title">[Your Project]</h3>
+          <p class="project-desc">Add your own work here. Describe the brief, tools used, and what you solved.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact -->
+<section id="contact">
+  <div class="container reveal">
+    <div class="section-label">Contact</div>
+    <div class="contact-inner">
+      <div class="contact-text">
+        <h2 class="section-heading">Let's build<br><em>something.</em></h2>
+        <p>
+          Open to freelance commissions, studio collaboration, and diploma-adjacent projects. Particularly interested in creature pipelines and dark-themed production environments.
+        </p>
+        <p>
+          Response time: within 48 hours.
+        </p>
+        <a href="mailto:your@email.com" class="btn btn-primary" style="margin-top: 0.5rem;">Send a Message</a>
+      </div>
+      <div>
+        <div class="contact-links">
+          <a href="https://artstation.com" target="_blank" class="contact-link">
+            <span class="cl-platform">ArtStation</span>
+            <span class="cl-name">your-handle</span>
+            <span class="cl-arrow">→</span>
+          </a>
+          <a href="https://linkedin.com" target="_blank" class="contact-link">
+            <span class="cl-platform">LinkedIn</span>
+            <span class="cl-name">Your Name</span>
+            <span class="cl-arrow">→</span>
+          </a>
+          <a href="https://github.com" target="_blank" class="contact-link">
+            <span class="cl-platform">GitHub</span>
+            <span class="cl-name">your-handle</span>
+            <span class="cl-arrow">→</span>
+          </a>
+          <a href="https://twitter.com" target="_blank" class="contact-link">
+            <span class="cl-platform">Twitter / X</span>
+            <span class="cl-name">@yourhandle</span>
+            <span class="cl-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <span class="footer-left">© 2025 — All rights reserved</span>
+    <span class="footer-right">built with intention</span>
+  </div>
+</footer>
+
+<script>
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
